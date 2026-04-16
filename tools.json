@@ -30,7 +30,7 @@
   { "name": "DeHashed", "url": "https://dehashed.com/", "category": "osint", "tags": ["breach", "credentials"], "desc": "Free deep web scans and protection against credential leaks." },
   { "name": "Have I Been Pwned", "url": "https://haveibeenpwned.com/", "category": "osint", "tags": ["breach", "email"], "desc": "Check if your email or phone is in a data breach." },
   { "name": "Recon-ng", "url": "https://github.com/lanmaster53/recon-ng", "category": "osint", "tags": ["framework", "cli"], "desc": "Full-featured reconnaissance framework designed with a Web-Based UI." },
-  { "name": "theHarvester", "url": "https://github.com/laramies/theHarvester", "category": "osint", "tags": ["email", "subdomains"], "desc: "E-mails, subdomains and names Harvester - OSINT." },
+  { "name": "theHarvester", "url": "https://github.com/laramies/theHarvester", "category": "osint", "tags": ["email", "subdomains"], "desc": "E-mails, subdomains and names Harvester - OSINT." },
   { "name": "Amass", "url": "https://github.com/owasp-amass/amass", "category": "osint", "tags": ["subdomains", "mapping"], "desc": "In-depth Attack Surface Mapping and Asset Discovery." },
   { "name": "Sublist3r", "url": "https://github.com/aboul3la/Sublist3r", "category": "osint", "tags": ["subdomains", "python"], "desc": "Fast subdomains enumeration tool for penetration testers." },
   { "name": "Photon", "url": "https://github.com/s0md3v/Photon", "category": "osint", "tags": ["crawler", "osint"], "desc": "Incredibly fast crawler designed for OSINT." },
