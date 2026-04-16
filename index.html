@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec Ultimate Arsenal & CVE Correlator (100+ Tools)</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --border-color: #30363d;
+            --success: #2ea043;
+            --error: #f85149;
+            --cve-bg: #1f2428;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .header h1 { margin: 0; color: var(--accent-color); }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        
+        button {
+            background-color: var(--panel-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        button:hover { background-color: var(--border-color); }
+        .btn-sync { background-color: var(--success); color: white; border: none; }
+        .btn-sync:hover { background-color: #3fb950; }
+        
+        #sync-status { font-size: 0.9em; margin-left: 10px; }
+        .status-ok { color: var(--success); }
+        .status-err { color: var(--error); }
+        
+        .tabs { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .tab { padding: 10px 20px; border-radius: 20px; }
+        .tab.active { background-color: var(--accent-color); color: #000; border-color: var(--accent-color); font-weight: bold; }
+        
+        .search-container { margin-bottom: 20px; display: flex; gap: 10px; align-items: center;}
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .counter { font-size: 0.9em; color: #8b949e; white-space: nowrap; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateY(-2px); border-color: #8b949e; }
+        .card h3 { margin: 0 0 8px 0; color: var(--accent-color); font-size: 1.1em; }
+        .card .badge {
+            display: inline-block;
+            background: #238636;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            width: fit-content;
+            margin-right: 4px;
+        }
+        .card p { margin: 0 0 16px 0; font-size: 0.85em; flex-grow: 1; color: #8b949e; }
+        .card a {
+            display: inline-block;
+            text-align: center;
+            background: #21262d;
+            color: var(--accent-color);
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            transition: 0.2s;
+            font-size: 0.9em;
+        }
+        .card a:hover { background: #30363d; }
+
+        /* CVE Correlator */
+        .cve-panel {
+            background: var(--cve-bg);
+            border: 1px solid var(--accent-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .cve-panel h2 { margin-top: 0; color: var(--accent-color); }
+        .cve-input-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .cve-input-group input { flex-grow: 1; }
+        .cve-links { display: flex; flex-wrap: wrap; gap: 10px; }
+        .cve-links a {
+            background: #21262d; border: 1px solid var(--border-color);
+            color: #c9d1d9; padding: 10px 15px; border-radius: 6px; text-decoration: none;
+        }
+        .cve-links a:hover { background: var(--border-color); color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>CyberSec Ultimate Arsenal</h1>
+        <div class="controls">
+            <span id="sync-status">Awaiting sync...</span>
+            <button class="btn-sync" onclick="fetchGithubData()">Force Sync Config</button>
+        </div>
+    </div>
+
+    <div id="cve-correlator" class="cve-panel">
+        <h2>CVE Intelligence Correlator</h2>
+        <p>Enter a CVE identifier (e.g. <b>CVE-2021-44228</b>) to instantly search across multiple threat intel databases.</p>
+        <div class="cve-input-group">
+            <input type="text" id="cve-input" class="search-box" placeholder="CVE-YYYY-NNNN" onkeypress="if(event.key === 'Enter') generateCveLinks()">
+            <button onclick="generateCveLinks()" style="background-color: var(--accent-color); color: black;">Correlate Data</button>
+        </div>
+        <div class="cve-links" id="cve-results"></div>
+    </div>
+
+    <div class="search-container" id="tools-search-container">
+        <input type="text" id="search-input" class="search-box" placeholder="Search across 100+ tools, tags, or keywords..." oninput="renderTools()">
+        <span class="counter" id="tool-counter">0 tools</span>
+    </div>
+
+    <div class="tabs" id="tabs-container"></div>
+    <div class="grid" id="tools-container"></div>
+
+    <script>
+        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/tools.json";
+        let toolsData = [];
+        let currentCategory = 'all';
+
+        const categories = {
+            'all': 'All Tools',
+            'cve': '🛡️ CVE Correlator',
+            'repos': 'GitHub Repos & Learning',
+            'osint': 'OSINT & Recon',
+            'redteam': 'Red Team',
+            'blueteam': 'Blue Team',
+            'web': 'Web Security',
+            'malware': 'Malware Analysis',
+            'daily': 'Utilities'
+        };
+
+        const fallbackData = [
+            // ================= GITHUB REPOS & LEARNING =================
+            { name: "PayloadsAllTheThings", url: "https://github.com/swisskyrepo/PayloadsAllTheThings", category: "repos", tags: ["payloads", "cheatsheet"], desc: "Massive list of useful payloads and bypasses for Web Application Security." },
+            { name: "SecLists", url: "https://github.com/danielmiessler/SecLists", category: "repos", tags: ["wordlists", "bruteforce"], desc: "The pentester's companion. Collection of multiple types of lists (usernames, passwords, URLs)." },
+            { name: "HackTricks", url: "https://book.hacktricks.xyz/", category: "repos", tags: ["wiki", "pentesting"], desc: "Massive hacking wiki containing tricks and techniques for almost every scenario." },
+            { name: "Awesome Cyber Security", url: "https://github.com/okhosting/awesome-cyber-security", category: "repos", tags: ["awesome-list", "resources"], desc: "Curated list of cyber security resources, tools, and platforms." },
+            { name: "Red-Teaming-Toolkit", url: "https://github.com/infosecn1nja/Red-Teaming-Toolkit", category: "repos", tags: ["redteam", "collection"], desc: "Collection of open source and commercial tools that aid in red team operations." },
+            { name: "Awesome Hacking", url: "https://github.com/Hack-with-Github/Awesome-Hacking", category: "repos", tags: ["awesome-list", "hacking"], desc: "A collection of various awesome lists for hackers, pentesters and security researchers." },
+            { name: "Awesome OSINT", url: "https://github.com/jivoi/awesome-osint", category: "repos", tags: ["awesome-list", "osint"], desc: "A curated list of amazingly awesome OSINT tools and resources." },
+            { name: "Machine Learning for Cyber Security", url: "https://github.com/jivoi/awesome-ml-for-cybersecurity", category: "repos", tags: ["ml", "ai"], desc: "Tools and resources related to the use of machine learning for cyber security." },
+            { name: "Vulnerable AD", url: "https://github.com/WazeHell/vulnerable-AD", category: "repos", tags: ["lab", "activedirectory"], desc: "Create a vulnerable Active Directory lab to practice attacks locally." },
+            { name: "Damn Vulnerable NodeJS", url: "https://github.com/appsecco/dvna", category: "repos", tags: ["lab", "web"], desc: "Damn Vulnerable NodeJS Application to practice Web Security." },
+            { name: "CloudGoat", url: "https://github.com/RhinoSecurityLabs/cloudgoat", category: "repos", tags: ["cloud", "aws"], desc: "Rhino Security Labs' \"Vulnerable by Design\" AWS deployment tool." },
+            { name: "API Security University", url: "https://github.com/arainho/awesome-api-security", category: "repos", tags: ["api", "learning"], desc: "Awesome collection of API Security tools and resources." },
+            { name: "Awesome Malware Analysis", url: "https://github.com/rshipp/awesome-malware-analysis", category: "repos", tags: ["malware", "awesome-list"], desc: "Curated list of awesome malware analysis tools and resources." },
+            { name: "Awesome Incident Response", url: "https://github.com/meirwah/awesome-incident-response", category: "repos", tags: ["dfir", "awesome-list"], desc: "A curated list of tools for incident response." },
+            { name: "Awesome Threat Intelligence", url: "https://github.com/hslatman/awesome-threat-intelligence", category: "repos", tags: ["cti", "awesome-list"], desc: "A curated list of Awesome Threat Intelligence resources." },
+            { name: "Awesome Forensics", url: "https://github.com/Cugu/awesome-forensics", category: "repos", tags: ["dfir", "awesome-list"], desc: "A curated list of awesome free open source computer forensics tools." },
+            { name: "Awesome Web Security", url: "https://github.com/qazbnm456/awesome-web-security", category: "repos", tags: ["web", "awesome-list"], desc: "A curated list of Web Security materials and resources." },
+            { name: "Active Directory Exploitation Cheat Sheet", url: "https://github.com/S1ckB0y1337/Active-Directory-Exploitation-Cheat-Sheet", category: "repos", tags: ["ad", "cheatsheet"], desc: "A cheat sheet that contains common enum and attack methods for AD." },
+            { name: "Pentest Bookmarks", url: "https://github.com/kurobeats/pentest-bookmarks", category: "repos", tags: ["bookmarks", "pentest"], desc: "A collection of pentesting bookmarks and resources." },
+
+            // ================= OSINT & RECON =================
+            { name: "ZoomEye", url: "https://www.zoomeye.org", category: "osint", tags: ["search engine", "iot"], desc: "Global search engine for cyberspace, discovering devices and vulnerabilities." },
+            { name: "OSINT Framework", url: "https://osintframework.com", category: "osint", tags: ["framework", "collection"], desc: "Web-based framework compiling various OSINT tools categorized by data types." },
+            { name: "Shodan", url: "https://www.shodan.io", category: "osint", tags: ["search engine", "iot"], desc: "The world's first search engine for Internet-connected devices." },
+            { name: "Maltego", url: "https://www.maltego.com/", category: "osint", tags: ["visual mapping", "relationships"], desc: "Comprehensive tool for graphical link analyses and real-time data mining." },
+            { name: "Censys", url: "https://search.censys.io/", category: "osint", tags: ["attack surface", "certificates"], desc: "Discover, monitor, and analyze devices that are accessible from the Internet." },
+            { name: "SpiderFoot", url: "https://www.spiderfoot.net/", category: "osint", tags: ["automation", "recon"], desc: "Automated OSINT collection tool focusing on gathering intelligence from 100+ sources." },
+            { name: "Netlas", url: "https://netlas.io/", category: "osint", tags: ["search engine", "network"], desc: "Internet scanner and search engine for discovering internet-facing assets." },
+            { name: "Hunter.io", url: "https://hunter.io/", category: "osint", tags: ["email", "recon"], desc: "Search engine to find professional email addresses." },
+            { name: "DeHashed", url: "https://dehashed.com/", category: "osint", tags: ["breach", "credentials"], desc: "Free deep web scans and protection against credential leaks." },
+            { name: "Have I Been Pwned", url: "https://haveibeenpwned.com/", category: "osint", tags: ["breach", "email"], desc: "Check if your email or phone is in a data breach." },
+            { name: "Recon-ng", url: "https://github.com/lanmaster53/recon-ng", category: "osint", tags: ["framework", "cli"], desc: "Full-featured reconnaissance framework designed with a Web-Based UI." },
+            { name: "theHarvester", url: "https://github.com/laramies/theHarvester", category: "osint", tags: ["email", "subdomains"], desc: "E-mails, subdomains and names Harvester - OSINT." },
+            { name: "Amass", url: "https://github.com/owasp-amass/amass", category: "osint", tags: ["subdomains", "mapping"], desc: "In-depth Attack Surface Mapping and Asset Discovery." },
+            { name: "Sublist3r", url: "https://github.com/aboul3la/Sublist3r", category: "osint", tags: ["subdomains", "python"], desc: "Fast subdomains enumeration tool for penetration testers." },
+            { name: "Photon", url: "https://github.com/s0md3v/Photon", category: "osint", tags: ["crawler", "osint"], desc: "Incredibly fast crawler designed for OSINT." },
+            { name: "PhoneInfoga", url: "https://github.com/sundowndev/phoneinfoga", category: "osint", tags: ["phone", "osint"], desc: "Advanced information gathering & OSINT framework for phone numbers." },
+
+            // ================= RED TEAM =================
+            { name: "Metasploit", url: "https://www.metasploit.com", category: "redteam", tags: ["framework", "exploitation"], desc: "The world's most used penetration testing framework." },
+            { name: "Cobalt Strike", url: "https://www.cobaltstrike.com", category: "redteam", tags: ["c2", "simulation"], desc: "Software for Adversary Simulations and Red Team Operations." },
+            { name: "Sliver", url: "https://github.com/BishopFox/sliver", category: "redteam", tags: ["c2", "golang"], desc: "Open source cross-platform adversary emulation/red team framework." },
+            { name: "BloodHound", url: "https://github.com/BloodHoundAD/BloodHound", category: "redteam", tags: ["activedirectory", "privesc"], desc: "Javascript Web App for mapping Active Directory relationships and attack paths." },
+            { name: "Havoc", url: "https://github.com/HavocFramework/Havoc", category: "redteam", tags: ["c2", "framework"], desc: "Modern and malleable post-exploitation command and control framework." },
+            { name: "Responder", url: "https://github.com/SpiderLabs/Responder", category: "redteam", tags: ["poisoning", "mitm"], desc: "LLMNR, NBT-NS and MDNS poisoner, with built-in rogue authentication server." },
+            { name: "CrackMapExec", url: "https://github.com/Porchetta-Industries/CrackMapExec", category: "redteam", tags: ["pivoting", "ad"], desc: "A swiss army knife for pentesting networks and Active Directory." },
+            { name: "Impacket", url: "https://github.com/fortra/impacket", category: "redteam", tags: ["python", "protocols"], desc: "Collection of Python classes for working with network protocols (SMB, MSRPC)." },
+            { name: "Empire", url: "https://github.com/BC-SECURITY/Empire", category: "redteam", tags: ["c2", "powershell"], desc: "PowerShell and Python post-exploitation agent." },
+            { name: "Covenant", url: "https://github.com/cobbr/Covenant", category: "redteam", tags: ["c2", "dotnet"], desc: "Covenant is a collaborative .NET C2 framework for red teamers." },
+            { name: "Mythic", url: "https://github.com/its-a-feature/Mythic", category: "redteam", tags: ["c2", "multi-platform"], desc: "A collaborative, multi-platform, plug-and-play C2 framework." },
+            { name: "Rubeus", url: "https://github.com/GhostPack/Rubeus", category: "redteam", tags: ["kerberos", "ad"], desc: "C# toolset for raw Kerberos interaction and abuses." },
+            { name: "Mimikatz", url: "https://github.com/gentilkiwi/mimikatz", category: "redteam", tags: ["credentials", "windows"], desc: "A little tool to play with Windows security (extract passwords, hashes)." },
+            { name: "Evilginx2", url: "https://github.com/kgretzky/evilginx2", category: "redteam", tags: ["phishing", "mitm"], desc: "Standalone man-in-the-middle attack framework used for phishing." },
+            { name: "Gophish", url: "https://github.com/gophish/gophish", category: "redteam", tags: ["phishing", "framework"], desc: "Open-Source Phishing Framework." },
+            { name: "Nmap", url: "https://nmap.org/", category: "redteam", tags: ["scanner", "network"], desc: "Free Security Scanner For Network Exploration & Security Audits." },
+            { name: "Masscan", url: "https://github.com/robertdavidgraham/masscan", category: "redteam", tags: ["scanner", "fast"], desc: "TCP port scanner, spews SYN packets asynchronously." },
+
+            // ================= BLUE TEAM =================
+            { name: "Wazuh", url: "https://wazuh.com", category: "blueteam", tags: ["siem", "xdr", "edr"], desc: "Free, open-source security platform for threat detection and compliance." },
+            { name: "Velociraptor", url: "https://github.com/Velocidex/velociraptor", category: "blueteam", tags: ["dfir", "endpoint"], desc: "Advanced endpoint visibility, collection and digital forensics tool." },
+            { name: "Security Onion", url: "https://securityonion.net", category: "blueteam", tags: ["nsm", "ids"], desc: "Linux distro for threat hunting, enterprise security monitoring, and log management." },
+            { name: "SysmonSearch", url: "https://github.com/JPCERTCC/SysmonSearch", category: "blueteam", tags: ["sysmon", "logs"], desc: "Tool for visualizing and analyzing Sysmon event logs." },
+            { name: "KQL Search", url: "https://kqlsearch.com/", category: "blueteam", tags: ["kql", "hunting"], desc: "Aggregator of KQL queries for Microsoft Sentinel threat hunting." },
+            { name: "Chainsaw", url: "https://github.com/WithSecureLabs/chainsaw", category: "blueteam", tags: ["forensics", "evtx"], desc: "Fast Windows Forensic Artefacts Searcher using Sigma rules." },
+            { name: "Suricata", url: "https://suricata.io/", category: "blueteam", tags: ["ids", "ips"], desc: "Open source network threat detection engine (IDS/IPS/NSM)." },
+            { name: "Zeek", url: "https://zeek.org/", category: "blueteam", tags: ["nsm", "network"], desc: "Open source network security monitoring tool." },
+            { name: "TheHive", url: "https://thehive-project.org/", category: "blueteam", tags: ["sirp", "incident-response"], desc: "A scalable, open source and free Security Incident Response Platform." },
+            { name: "MISP", url: "https://www.misp-project.org/", category: "blueteam", tags: ["cti", "sharing"], desc: "Open Source Threat Intelligence Platform & Open Standards For Threat Information Sharing." },
+            { name: "Cortex", url: "https://github.com/TheHive-Project/Cortex", category: "blueteam", tags: ["automation", "analyzers"], desc: "Powerful Observable Analysis and Active Response Engine." },
+            { name: "Sigma", url: "https://github.com/SigmaHQ/sigma", category: "blueteam", tags: ["rules", "siem"], desc: "Generic Signature Format for SIEM Systems." },
+            { name: "YARA", url: "https://virustotal.github.io/yara/", category: "blueteam", tags: ["rules", "malware"], desc: "The pattern matching swiss knife for malware researchers." },
+            { name: "OSSEC", url: "https://www.ossec.net/", category: "blueteam", tags: ["hids", "logs"], desc: "Open Source Host-based Intrusion Detection System." },
+            { name: "Snort", url: "https://www.snort.org/", category: "blueteam", tags: ["ids", "ips"], desc: "Network intrusion detection and prevention system." },
+            { name: "Kape", url: "https://www.kroll.com/en/services/cyber-risk/incident-response-litigation-support/kroll-artifact-parser-extractor-kape", category: "blueteam", tags: ["forensics", "collection"], desc: "Kroll Artifact Parser and Extractor (KAPE)." },
+            { name: "Volatility", url: "https://github.com/volatilityfoundation/volatility3", category: "blueteam", tags: ["forensics", "memory"], desc: "The volatile memory extraction utility framework." },
+
+            // ================= WEB SECURITY =================
+            { name: "Burp Suite", url: "https://portswigger.net/burp", category: "web", tags: ["proxy", "scanner"], desc: "Industry standard toolkit for web application security testing." },
+            { name: "OWASP ZAP", url: "https://www.zaproxy.org", category: "web", tags: ["scanner", "dast"], desc: "Free, open-source penetration testing tool maintained by OWASP." },
+            { name: "Nuclei", url: "https://github.com/projectdiscovery/nuclei", category: "web", tags: ["scanner", "templates"], desc: "Fast and customisable vulnerability scanner based on simple YAML based DSL." },
+            { name: "SQLmap", url: "https://github.com/sqlmapproject/sqlmap", category: "web", tags: ["sql-injection", "database"], desc: "Automatic SQL injection and database takeover tool." },
+            { name: "FFuF", url: "https://github.com/ffuf/ffuf", category: "web", tags: ["fuzzing", "discovery"], desc: "Fast web fuzzer written in Go." },
+            { name: "Wappalyzer", url: "https://www.wappalyzer.com", category: "web", tags: ["fingerprinting", "extension"], desc: "Identify technologies used on websites." },
+            { name: "Gobuster", url: "https://github.com/OJ/gobuster", category: "web", tags: ["fuzzing", "dirbusting"], desc: "Directory/File, DNS and VHost busting tool written in Go." },
+            { name: "Nikto", url: "https://github.com/sullo/nikto", category: "web", tags: ["scanner", "perl"], desc: "Web server scanner which performs comprehensive tests against web servers." },
+            { name: "WPScan", url: "https://wpscan.com/", category: "web", tags: ["wordpress", "scanner"], desc: "Free wordPress security scanner." },
+            { name: "XSStrike", url: "https://github.com/s0md3v/XSStrike", category: "web", tags: ["xss", "scanner"], desc: "Most advanced XSS scanner." },
+            { name: "Dirsearch", url: "https://github.com/maurosoria/dirsearch", category: "web", tags: ["fuzzing", "python"], desc: "Web path scanner." },
+            { name: "Caido", url: "https://caido.io/", category: "web", tags: ["proxy", "rust"], desc: "A lightweight web security auditing toolkit (Rust based Burp alternative)." },
+
+            // ================= MALWARE ANALYSIS =================
+            { name: "Ghidra", url: "https://ghidra-sre.org", category: "malware", tags: ["reverse engineering", "sre"], desc: "Software reverse engineering (SRE) framework created by the NSA." },
+            { name: "VirusTotal", url: "https://www.virustotal.com", category: "malware", tags: ["sandbox", "scanner"], desc: "Analyze suspicious files, domains, IPs and URLs to detect malware." },
+            { name: "Any.Run", url: "https://any.run", category: "malware", tags: ["sandbox", "dynamic"], desc: "Interactive online malware analysis sandbox." },
+            { name: "Cuckoo Sandbox", url: "https://cuckoosandbox.org/", category: "malware", tags: ["sandbox", "automated"], desc: "Automated dynamic malware analysis system." },
+            { name: "x64dbg", url: "https://x64dbg.com/", category: "malware", tags: ["debugger", "windows"], desc: "Open-source x64/x32 debugger for Windows." },
+            { name: "Unprotect Project", url: "https://unprotect.it/", category: "malware", tags: ["evasion", "knowledge-base"], desc: "Open-source database of malware evasion techniques." },
+            { name: "Hybrid Analysis", url: "https://www.hybrid-analysis.com/", category: "malware", tags: ["sandbox", "free"], desc: "Free malware analysis service powered by Falcon Sandbox." },
+            { name: "Joe Sandbox", url: "https://www.joesecurity.org/", category: "malware", tags: ["sandbox", "deep"], desc: "Deep malware analysis engine." },
+            { name: "Radare2", url: "https://github.com/radareorg/radare2", category: "malware", tags: ["re", "cli"], desc: "UNIX-like reverse engineering framework and command-line toolset." },
+            { name: "IDA Free", url: "https://hex-rays.com/ida-free/", category: "malware", tags: ["re", "disassembler"], desc: "Free version of the popular IDA Disassembler." },
+            { name: "Cutter", url: "https://cutter.re/", category: "malware", tags: ["re", "gui"], desc: "Free and Open Source Reverse Engineering Platform powered by rizin." },
+            { name: "PeStudio", url: "https://www.winitor.com/", category: "malware", tags: ["static", "windows"], desc: "Static analysis of Windows executable files." },
+            { name: "FLOSS", url: "https://github.com/mandiant/flare-floss", category: "malware", tags: ["strings", "obfuscation"], desc: "FireEye Labs Obfuscated String Solver." },
+
+            // ================= UTILITIES & DAILY =================
+            { name: "CyberChef", url: "https://gchq.github.io/CyberChef", category: "daily", tags: ["crypto", "encoding"], desc: "The Cyber Swiss Army Knife for encryption and encoding." },
+            { name: "GTFOBins", url: "https://gtfobins.github.io", category: "daily", tags: ["privesc", "linux"], desc: "List of Unix binaries that can be used to bypass security restrictions." },
+            { name: "LOLBAS", url: "https://lolbas-project.github.io/", category: "daily", tags: ["privesc", "windows"], desc: "Living Off The Land Binaries for Windows." },
+            { name: "MXToolBox", url: "https://mxtoolbox.com", category: "daily", tags: ["dns", "email"], desc: "Fast, accurate network diagnostic and lookup tools." },
+            { name: "FileSec", url: "https://filesec.io/", category: "daily", tags: ["extensions", "payloads"], desc: "Guide to attacker file extensions used in phishing and malware." },
+            { name: "Exploit Database", url: "https://www.exploit-db.com/", category: "daily", tags: ["exploits", "cve"], desc: "CVE compliant archive of public exploits and corresponding vulnerable software." },
+            { name: "CrackStation", url: "https://crackstation.net/", category: "daily", tags: ["hashes", "cracking"], desc: "Free password hash cracker using massive rainbow tables." },
+            { name: "jwt.io", url: "https://jwt.io/", category: "daily", tags: ["jwt", "decoder"], desc: "Decode, verify and generate JWTs." },
+            { name: "Regex101", url: "https://regex101.com/", category: "daily", tags: ["regex", "testing"], desc: "Regular expression tester with syntax highlighting." },
+            { name: "BGPview", url: "https://bgpview.io/", category: "daily", tags: ["bgp", "asn"], desc: "BGP toolkit for ASN, IPv4/IPv6 prefixes routing information." },
+            { name: "Draw.io", url: "https://app.diagrams.net/", category: "daily", tags: ["diagrams", "architecture"], desc: "Free online diagram software (great for network topology)." },
+            { name: "Notepad++", url: "https://notepad-plus-plus.org/", category: "daily", tags: ["editor", "windows"], desc: "Free source code editor and Notepad replacement." }
+        ];
+
+        async function fetchGithubData() {
+            const statusEl = document.getElementById('sync-status');
+            statusEl.textContent = 'Syncing...';
+            statusEl.className = '';
+
+            try {
+                const response = await fetch(`${GITHUB_RAW_URL}?t=${new Date().getTime()}`);
+                if (!response.ok) throw new Error('Network error');
+                const data = await response.json();
+                toolsData = data;
+                statusEl.textContent = '✓ Synced with GitHub';
+                statusEl.className = 'status-ok';
+            } catch (error) {
+                toolsData = fallbackData;
+                statusEl.textContent = '⚠ Using Offline Database (100+ Tools)';
+                statusEl.className = 'status-err';
+            }
+            renderTabs();
+            renderTools();
+        }
+
+        function renderTabs() {
+            const tabsContainer = document.getElementById('tabs-container');
+            tabsContainer.innerHTML = '';
+            
+            for (const [key, label] of Object.entries(categories)) {
+                const btn = document.createElement('button');
+                btn.className = `tab ${key === currentCategory ? 'active' : ''}`;
+                btn.textContent = label;
+                btn.onclick = () => {
+                    currentCategory = key;
+                    
+                    const cvePanel = document.getElementById('cve-correlator');
+                    const toolsSearch = document.getElementById('tools-search-container');
+                    const toolsContainer = document.getElementById('tools-container');
+                    
+                    if (key === 'cve') {
+                        cvePanel.style.display = 'block';
+                        toolsSearch.style.display = 'none';
+                        toolsContainer.style.display = 'none';
+                    } else {
+                        cvePanel.style.display = 'none';
+                        toolsSearch.style.display = 'flex';
+                        toolsContainer.style.display = 'grid';
+                    }
+
+                    renderTabs();
+                    if(key !== 'cve') renderTools();
+                };
+                tabsContainer.appendChild(btn);
+            }
+        }
+
+        function renderTools() {
+            const container = document.getElementById('tools-container');
+            const searchInput = document.getElementById('search-input').value.toLowerCase();
+            container.innerHTML = '';
+            
+            const filteredTools = toolsData.filter(tool => {
+                const matchesCategory = currentCategory === 'all' || tool.category === currentCategory;
+                const matchesSearch = 
+                    tool.name.toLowerCase().includes(searchInput) || 
+                    tool.desc.toLowerCase().includes(searchInput) ||
+                    (tool.tags && tool.tags.some(tag => tag.toLowerCase().includes(searchInput)));
+                return matchesCategory && matchesSearch;
+            });
+            
+            document.getElementById('tool-counter').textContent = `Showing ${filteredTools.length} tools`;
+
+            if (filteredTools.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #8b949e;">No tools found.</p>';
+                return;
+            }
+
+            filteredTools.forEach(tool => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                const tagsHtml = tool.tags ? tool.tags.map(tag => `<span class="badge">${tag}</span>`).join('') : '';
+                
+                card.innerHTML = `
+                    <h3>${tool.name}</h3>
+                    <div>${tagsHtml}</div>
+                    <p>${tool.desc}</p>
+                    <a href="${tool.url}" target="_blank" rel="noopener noreferrer">Launch Tool 🡕</a>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function generateCveLinks() {
+            const input = document.getElementById('cve-input').value.trim().toUpperCase();
+            const resultsDiv = document.getElementById('cve-results');
+            
+            const cveRegex = /^CVE-\d{4}-\d{4,7}$/;
+            if (!cveRegex.test(input)) {
+                resultsDiv.innerHTML = '<span style="color: var(--error);">Invalid format. Please use CVE-YYYY-NNNN</span>';
+                return;
+            }
+
+            const links = [
+                { name: "NIST NVD", url: `https://nvd.nist.gov/vuln/detail/${input}` },
+                { name: "Exploit-DB", url: `https://www.exploit-db.com/search?cve=${input.split('-').slice(1).join('-')}` },
+                { name: "GitHub PoC", url: `https://github.com/search?q=${input}+poc&type=repositories` },
+                { name: "Vulners", url: `https://vulners.com/search?query=${input}` },
+                { name: "Shodan", url: `https://www.shodan.io/search?query=vuln%3A${input}` }
+            ];
+
+            resultsDiv.innerHTML = links.map(l => 
+                `<a href="${l.url}" target="_blank" rel="noopener noreferrer">${l.name} 🡕</a>`
+            ).join('');
+        }
+
+        window.onload = () => {
+            fetchGithubData();
+        };
+    </script>
+</body>
+</html>
