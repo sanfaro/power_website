@@ -33,7 +33,6 @@
         .card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; transition: transform 0.2s; position: relative;}
         .card:hover { transform: translateY(-2px); border-color: #8b949e; }
         
-        /* Layout tytułu i gwiazdki */
         .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
         .card h3 { margin: 0; color: var(--accent-color); font-size: 1.1em; }
         .fav-btn { background: none; border: none; color: #484f58; font-size: 1.5em; cursor: pointer; padding: 0; margin-left: 10px; transition: color 0.2s; }
@@ -46,12 +45,10 @@
         .card a { display: inline-block; text-align: center; background: #21262d; color: var(--accent-color); text-decoration: none; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.9em; }
         .card a:hover { background: #30363d; }
 
-        /* CVE Panel */
         .cve-panel { background: var(--cve-bg); border: 1px solid var(--accent-color); padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .cve-input-group { display: flex; gap: 10px; margin-bottom: 15px; }
         .cve-links a { display: inline-block; background: #21262d; border: 1px solid var(--border-color); color: #c9d1d9; padding: 10px 15px; border-radius: 6px; text-decoration: none; margin: 5px; }
 
-        /* News Panel */
         .news-panel { display: none; }
         .news-item { background: var(--panel-bg); border-left: 4px solid var(--accent-color); padding: 12px 16px; margin-bottom: 10px; border-radius: 4px; }
         .news-item a { color: #c9d1d9; text-decoration: none; font-weight: 500; font-size: 1.1em; }
@@ -68,7 +65,6 @@
 
     <div class="tabs" id="tabs-container"></div>
 
-    <!-- Panel: CVE Correlator -->
     <div id="cve-correlator" class="cve-panel">
         <h2 style="margin-top:0; color:var(--accent-color)">CVE Intelligence Correlator</h2>
         <div class="cve-input-group">
@@ -78,28 +74,24 @@
         <div class="cve-links" id="cve-results"></div>
     </div>
 
-    <!-- Panel: News RSS -->
     <div id="news-container" class="news-panel">
         <h2 style="color:var(--accent-color)">Latest Security News</h2>
         <p style="color:#8b949e">Live feed from The Hacker News & BleepingComputer</p>
         <div id="news-feed">Loading fresh intelligence...</div>
     </div>
 
-    <!-- Wyszukiwarka Narzędzi -->
     <div class="search-container" id="tools-search-container">
         <input type="text" id="search-input" class="search-box" placeholder="Search across 100+ tools, tags, or keywords..." oninput="renderTools()">
         <span class="counter" id="tool-counter">0 tools</span>
     </div>
 
-    <!-- Siatka narzędzi -->
     <div class="grid" id="tools-container"></div>
 
     <script>
-        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/sanfaro/power_website/refs/heads/main/tools.json";
+        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/tools.json";
         
         let toolsData = [];
         let currentCategory = 'all';
-        // System ulubionych w locastorage
         let favorites = JSON.parse(localStorage.getItem('cyberFavs')) || [];
 
         const categories = {
@@ -115,7 +107,6 @@
             'malware': 'Malware Analysis'
         };
 
-        // Fallback w razie błędu GitHuba
         const fallbackData = [
             { "name": "Burp Suite", "url": "https://portswigger.net/burp", "category": "web", "tags": ["proxy", "scanner"], "desc": "Industry standard toolkit for web application security testing." },
             { "name": "OSINT Framework", "url": "https://osintframework.com", "category": "osint", "tags": ["framework"], "desc": "Web-based framework compiling various OSINT tools." },
@@ -134,7 +125,7 @@
                 statusEl.textContent = '🟢 Database Synced';
                 statusEl.style.color = 'var(--success)';
             } catch (error) {
-                toolsData = fallbackData; // Wczytuje okrojoną bazę jeśli zły link git
+                toolsData = fallbackData;
                 statusEl.textContent = '🔴 Offline Mode (Using Backup DB)';
                 statusEl.style.color = 'var(--error)';
             }
@@ -142,18 +133,16 @@
             renderTools();
         }
 
-        // --- Logika Ulubionych ---
         function toggleFavorite(toolName) {
             if (favorites.includes(toolName)) {
-                favorites = favorites.filter(name => name !== toolName); // Usuń
+                favorites = favorites.filter(name => name !== toolName);
             } else {
-                favorites.push(toolName); // Dodaj
+                favorites.push(toolName);
             }
-            localStorage.setItem('cyberFavs', JSON.stringify(favorites)); // Zapisz na dysku
-            renderTools(); // Odśwież widok by zaktualizować gwiazdki
+            localStorage.setItem('cyberFavs', JSON.stringify(favorites));
+            renderTools();
         }
 
-        // --- Logika Tagów ---
         function filterByTag(tag) {
             document.getElementById('search-input').value = tag;
             renderTools();
@@ -175,7 +164,6 @@
                     const toolsSearch = document.getElementById('tools-search-container');
                     const toolsContainer = document.getElementById('tools-container');
                     
-                    // Resetowanie widoków
                     cvePanel.style.display = 'none';
                     newsPanel.style.display = 'none';
                     toolsSearch.style.display = 'none';
@@ -204,13 +192,11 @@
             container.innerHTML = '';
             
             const filteredTools = toolsData.filter(tool => {
-                // Filtrowanie kategorii
                 let matchesCategory = false;
                 if (currentCategory === 'all') matchesCategory = true;
                 else if (currentCategory === 'favs') matchesCategory = favorites.includes(tool.name);
                 else matchesCategory = tool.category === currentCategory;
 
-                // Filtrowanie wyszukiwarki
                 const matchesSearch = 
                     tool.name.toLowerCase().includes(searchInput) || 
                     tool.desc.toLowerCase().includes(searchInput) ||
@@ -231,7 +217,6 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 
-                // Klikalne tagi
                 const tagsHtml = tool.tags ? tool.tags.map(tag => `<span class="badge" onclick="filterByTag('${tag}')">${tag}</span>`).join('') : '';
                 
                 card.innerHTML = `
@@ -249,13 +234,11 @@
             });
         }
 
-        // --- Logika Newsów (RSS do JSON Proxy) ---
         let newsLoaded = false;
         async function fetchNews() {
-            if(newsLoaded) return; // Nie pobieraj co chwile jak ktoś klika zakładki
+            if(newsLoaded) return;
             const feedContainer = document.getElementById('news-feed');
             
-            // RSS url The Hacker News
             const rssUrl = "https://feeds.feedburner.com/TheHackersNews";
             const apiProxy = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
             
@@ -264,7 +247,7 @@
                 const data = await response.json();
                 
                 feedContainer.innerHTML = '';
-                data.items.slice(0, 10).forEach(item => { // Pokaż max 10 najnowszych
+                data.items.slice(0, 10).forEach(item => {
                     const date = new Date(item.pubDate).toLocaleString();
                     feedContainer.innerHTML += `
                         <div class="news-item">
@@ -279,7 +262,6 @@
             }
         }
 
-        // --- Logika CVE ---
         function generateCveLinks() {
             const input = document.getElementById('cve-input').value.trim().toUpperCase();
             const resultsDiv = document.getElementById('cve-results');
