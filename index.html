@@ -88,7 +88,7 @@
     <div class="grid" id="tools-container"></div>
 
     <script>
-        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/sanfaro/power_website/refs/heads/main/tools.json";
+        const GITHUB_RAW_URL = "https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO/main/tools.json";
         
         let toolsData = [];
         let currentCategory = 'all';
@@ -252,7 +252,7 @@
                     feedContainer.innerHTML += `
                         <div class="news-item">
                             <a href="${item.link}" target="_blank">${item.title}</a>
-                            <div class="news-date">🗓️ ${date} | Źródło: The Hacker News</div>
+                            <div class="news-date">🗓️ ${date} | Source: The Hacker News</div>
                         </div>
                     `;
                 });
