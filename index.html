@@ -246,33 +246,136 @@
                 container.appendChild(card);
             });
         }
+        // -----------------------------------------------------------------------------
+        // Threat Intelligence Engine
+        // -----------------------------------------------------------------------------
+        let rawThreatData = [];
+        let currentNewsCategory = 'All';
 
-        let newsLoaded = false;
+        function categorizeThreat(title) {
+            const text = title.toLowerCase();
+            if (text.includes('windows') || text.includes('linux') || text.includes('macos') || text.includes('ios') || text.includes('android')) return '🖥️ OS & Systems';
+            if (text.includes('cisco') || text.includes('vpn') || text.includes('router') || text.includes('firewall') || text.includes('fortinet') || text.includes('palo alto')) return '🌐 Network & Infra';
+            if (text.includes('wordpress') || text.includes('apache') || text.includes('php') || text.includes('browser') || text.includes('chrome') || text.includes('api')) return '🕸️ Web & Apps';
+            if (text.includes('aws') || text.includes('azure') || text.includes('vmware') || text.includes('intel') || text.includes('amd')) return '☁️ Cloud & Hardware';
+            return '🚨 General Threat';
+        }
+
         async function fetchNews() {
-            if(newsLoaded) return;
+            if (rawThreatData.length > 0) return; // Prevent multiple requests
+            
             const feedContainer = document.getElementById('news-feed');
+            const newsPanel = document.getElementById('news-container');
             
-            const rssUrl = "https://feeds.feedburner.com/TheHackersNews";
-            const apiProxy = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
-            
-            try {
-                const response = await fetch(apiProxy);
-                const data = await response.json();
-                
-                feedContainer.innerHTML = '';
-                data.items.slice(0, 10).forEach(item => {
-                    const date = new Date(item.pubDate).toLocaleString();
-                    feedContainer.innerHTML += `
-                        <div class="news-item">
-                            <a href="${item.link}" target="_blank">${item.title}</a>
-                            <div class="news-date">🗓️ ${date} | Source: The Hacker News</div>
-                        </div>
-                    `;
-                });
-                newsLoaded = true;
-            } catch(e) {
-                feedContainer.innerHTML = '<span style="color:var(--error)">Error loading news feed. Try again later.</span>';
+            // Inject filter buttons dynamically if they don't exist
+            if (!document.getElementById('news-filters')) {
+                const filterHTML = `
+                    <div class="tabs" id="news-filters" style="border:none; padding-bottom:0; margin-bottom: 15px; gap: 8px;">
+                        <button class="tab active" onclick="filterNewsCategory('All')">All Threats</button>
+                        <button class="tab" onclick="filterNewsCategory('🖥️ OS & Systems')">OS & Systems</button>
+                        <button class="tab" onclick="filterNewsCategory('🌐 Network & Infra')">Network & Infra</button>
+                        <button class="tab" onclick="filterNewsCategory('🕸️ Web & Apps')">Web & Apps</button>
+                        <button class="tab" onclick="filterNewsCategory('☁️ Cloud & Hardware')">Cloud & Hardware</button>
+                    </div>
+                `;
+                newsPanel.insertBefore(document.createRange().createContextualFragment(filterHTML), feedContainer);
             }
+
+            feedContainer.innerHTML = 'Gathering global threat telemetry...';
+            
+            const feeds = [
+                "https://feeds.feedburner.com/TheHackersNews",
+                "https://www.bleepingcomputer.com/feed/"
+            ];
+
+            try {
+                let combinedItems = [];
+                
+                // Fetch from multiple RSS feeds
+                for (const url of feeds) {
+                    const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`;
+                    const response = await fetch(proxyUrl);
+                    if (response.ok) {
+                        const data = await response.json();
+                        combinedItems = combinedItems.concat(data.items);
+                    }
+                }
+
+                // Sort by newest
+                combinedItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+                // Format and categorize
+                rawThreatData = combinedItems.map(item => {
+                    const sourceName = item.link.includes('bleeping') ? 'BleepingComputer' : 'The Hacker News';
+                    return {
+                        title: item.title,
+                        link: item.link,
+                        pubDate: item.pubDate,
+                        source: sourceName,
+                        category: categorizeThreat(item.title)
+                    };
+                });
+
+                renderNewsFeed();
+
+            } catch(e) {
+                console.error(e);
+                feedContainer.innerHTML = '<span style="color:var(--error)">Error loading threat intelligence feed. Try again later.</span>';
+            }
+        }
+
+        function filterNewsCategory(category) {
+            currentNewsCategory = category;
+            
+            // Update active button styling
+            const buttons = document.querySelectorAll('#news-filters .tab');
+            buttons.forEach(btn => {
+                if (btn.textContent.includes(category) || (category === 'All' && btn.textContent === 'All Threats')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            renderNewsFeed();
+        }
+
+        function renderNewsFeed() {
+            const feedContainer = document.getElementById('news-feed');
+            feedContainer.innerHTML = '';
+
+            const filteredData = rawThreatData.filter(item => 
+                currentNewsCategory === 'All' || item.category === currentNewsCategory
+            );
+
+            if (filteredData.length === 0) {
+                feedContainer.innerHTML = '<p style="color:#8b949e;">No recent vulnerabilities found for this specific sector.</p>';
+                return;
+            }
+
+            // Render top 15 results
+            filteredData.slice(0, 15).forEach(item => {
+                const date = new Date(item.pubDate).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                
+                // Set badge colors
+                let badgeColor = "#30363d"; 
+                if (item.category.includes('OS')) badgeColor = "#1f6feb";
+                if (item.category.includes('Network')) badgeColor = "#238636";
+                if (item.category.includes('Web')) badgeColor = "#9e6a03";
+                if (item.category.includes('Cloud')) badgeColor = "#8957e5";
+
+                feedContainer.innerHTML += `
+                    <div class="news-item" style="display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                            <a href="${item.link}" target="_blank" style="flex-grow:1; line-height: 1.3;">${item.title}</a>
+                            <span style="background:${badgeColor}; color:#ffffff; padding:3px 10px; border-radius:12px; font-size:0.75em; font-weight:bold; white-space:nowrap; box-shadow: 0 0 4px rgba(0,0,0,0.3);">
+                                ${item.category}
+                            </span>
+                        </div>
+                        <div class="news-date">🗓️ ${date} | Source: ${item.source}</div>
+                    </div>
+                `;
+            });
         }
 
         function generateCveLinks() {
