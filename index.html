@@ -74,9 +74,22 @@
         <div class="cve-links" id="cve-results"></div>
     </div>
 
+         <!-- Panel: Threat Intelligence Feed -->
     <div id="news-container" class="news-panel">
-        <h2 style="color:var(--accent-color)">Latest Security News</h2>
-        <p style="color:#8b949e">Live feed from The Hacker News & BleepingComputer</p>
+        <h2 style="margin-top:0; color:var(--accent-color)">Threat Intelligence Feed</h2>
+        <p style="color:#8b949e">Latest vulnerabilities and active threats automatically categorized by sector.</p>
+        
+        <!-- Category Filters -->
+        <div class="tabs" id="news-filters" style="border:none; padding-bottom:0; margin-bottom: 15px; gap: 8px;">
+            <button class="tab active" onclick="filterNews('All')">All Threats</button>
+            <button class="tab" onclick="filterNews('🖥️ OS & Systems')">OS & Systems</button>
+            <button class="tab" onclick="filterNews('🌐 Network & Infra')">Network & Infra</button>
+            <button class="tab" onclick="filterNews('🕸️ Web & Apps')">Web & Apps</button>
+            <button class="tab" onclick="filterNews('☁️ Cloud & Hardware')">Cloud & Hardware</button>
+        </div>
+
+        <div id="news-feed">Gathering global threat telemetry...</div>
+    </div>
         <div id="news-feed">Loading fresh intelligence...</div>
     </div>
 
@@ -96,9 +109,9 @@
 
         const categories = {
             'all': 'All Tools',
-            'favs': '⭐ Favorites',
-            'cve': '🛡️ CVE Correlator',
-            'news': '📰 Live News',
+            'favs': ' Favorites',
+            'cve': ' CVE Correlator',
+            'news': ' Live News',
             'repos': 'GitHub Repos',
             'osint': 'OSINT',
             'redteam': 'Red Team',
